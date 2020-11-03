@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N slope
+#PBS -l nodes=5:ppn=16
+#PBS -j n
+#PBS -l walltime=4:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+mpiexec -n $NP -hostfile $PBS_NODEFILE python slope.py -i /public/home/mfeng/jwang/forest/northeast/tcc/data -o /public/home/mfeng/jwang/forest/northeast/tcc/slope/1 -n $NP

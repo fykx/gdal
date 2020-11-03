@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N bzc
+#PBS -l nodes=2:ppn=32
+#PBS -j n
+#PBS -l walltime=7:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+mpiexec -n $NP -hostfile $PBS_NODEFILE python bzc.py -i /public/home/mfeng/jwang/forest/northeast/tcc/tcc_new -o /public/home/mfeng/jwang/forest/northeast/out/bzc/1 -wi 801 -he 801 -n $NP

@@ -1,0 +1,1 @@
+gdalwarp -cutline /public/home/mfeng/jwang/forest/northeast/tcc/ne_shp/NE_WGS1984.shp /public/home/mfeng/jwang/forest/northeast/tcc/slope/2/slope_mosaic.tif /public/home/mfeng/jwang/forest/northeast/tcc/slope/2/ne_slope.tif

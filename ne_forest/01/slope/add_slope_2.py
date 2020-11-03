@@ -1,0 +1,127 @@
+def listparadatas(pathinpara):
+    import os
+
+    a = []
+    datas = os.listdir(pathinpara)
+    for i in datas:
+        if i.endswith('.tif'):
+            a.append(i.split('.')[0])
+    return a
+
+def listdatas(pathin, datas):
+    import os
+
+    _datas = []
+    for _root, _dirs, _files in os.walk(pathin):
+        _datas_i = []
+        if len(_files) != 0:
+            for _file in _files:
+                _vv = None
+                if _file.endswith('_dat.tif'):
+                   _vv = os.path.join(_root, _file)
+                   _datas_i.append(_vv)
+        _datas_i.sort()
+        if len(_datas_i) != 0 and _datas_i[0].split('/')[-1].split('_')[0] in datas:
+            _datas.append(_datas_i)
+    return _datas
+
+def divide(datas, n):
+    mpi_datas = {}
+    step = len(datas)//n
+    for i in range(n):
+        if i < n-1:
+            mpi_data = datas[i*step:(i+1)*step]
+            mpi_datas[i] = mpi_data
+        else:
+            mpi_data = datas[i*step:]
+            mpi_datas[i] = mpi_data
+
+    j = 0
+    while len(mpi_datas[n-1]) > step and j < n-1:
+        mpi_datas[j].append(mpi_datas[n-1][-1])
+        mpi_datas[n-1].remove(mpi_datas[n-1][-1])
+        j = j + 1
+    
+    mpi_datas_out = []
+    for mpi_data_out in mpi_datas.values():
+        mpi_datas_out.append(mpi_data_out)
+    return mpi_datas_out
+
+def slope(datalist, pathout):
+    import math
+    import os
+    import numpy as np
+    from osgeo import gdal
+
+    print(datalist[0].split('/')[-1].split('.')[0].split('_')[0])
+
+    datalist.sort()
+    in_ds = gdal.Open(datalist[0])
+    in_band = in_ds.GetRasterBand(1)
+    xsize = in_band.XSize
+    ysize = in_band.YSize
+
+    gtiff_driver = gdal.GetDriverByName('GTiff')
+    out_ds = gtiff_driver.Create(pathout + '/' + datalist[0].split('/')[-1].split('.')[0].split('_')[0] + '.tif', xsize, ysize, 1, gdal.GDT_Float32)
+    out_ds.SetProjection(in_ds.GetProjection())
+    out_ds.SetGeoTransform(in_ds.GetGeoTransform())
+
+    para_0 = np.zeros(shape=(ysize, xsize))
+    para_1 = np.zeros(shape=(ysize, xsize))
+
+    q = 0
+    w = 0
+    for i in datalist:
+        ds = gdal.Open(i)
+        band = ds.GetRasterBand(1)
+        data_array = band.ReadAsArray().astype(float)
+        data_mask_array = np.where(data_array==-99.0, np.nan, data_array)
+
+        para_0 = para_0 + (data_mask_array * float(i.split('/')[-1].split('_')[1].replace('y','')))
+        q = q + float(i.split('/')[-1].split('_')[1].replace('y',''))
+        para_1 = para_1 + data_mask_array
+        w = w + math.pow(float(i.split('/')[-1].split('_')[1].replace('y','')),2)
+    para_a = len(datalist) * para_0
+    para_b = para_1 * q
+    para_c = len(datalist) * w - math.pow(q,2)
+    out_data = (para_a - para_b) / para_c
+    out_array = np.where(np.isnan(out_data), -99.0, out_data)
+
+    out_band = out_ds.GetRasterBand(1)
+    out_band.FlushCache()
+    out_band.WriteArray(out_array)
+    out_band.SetNoDataValue(-99.0)
+    out_band.ComputeStatistics(False) 
+    return
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', type=str, help='input', required=True)# 输入路径
+    parser.add_argument('-o', '--output', type=str, help='output', required=True)# 输出路径
+    parser.add_argument('-pm', '--para_mean', type=str, help='para_mean', required=True)#
+    parser.add_argument('-ps', '--para_slope', type=str, help='para_slope', required=True)#
+    parser.add_argument('-n', '--number', type=int, default=1, help='Number of processes', required=True)# 进程个数
+    args = parser.parse_args()
+
+    means = listparadatas(args.para_mean)
+
+    slopes = listparadatas(args.para_slope)
+    
+    fykx = [x for x in means if x not in slopes]
+
+    datas = listdatas(args.input, fykx)
+
+    import mpi4py.MPI as MPI
+    comm = MPI.COMM_WORLD
+
+    mpi_datas = divide(datas, args.number)
+    mpi_data_divide = comm.scatter(mpi_datas, root=0)
+    for i in mpi_data_divide:
+        slope(i, args.output) 
+    return
+
+if __name__ == "__main__":
+    main()
+
+# mpiexec -n $NP -hostfile $PBS_NODEFILE python add_slope.py -i /public/home/mfeng/jwang/forest/northeast/tcc/tcc_new -o /public/home/mfeng/jwang/forest/northeast/out/slope/2 -pm /public/home/mfeng/jwang/forest/northeast/out/mean/1 -ps /public/home/mfeng/jwang/forest/northeast/out/slope/1 -n $NP

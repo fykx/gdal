@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N mosaic_sh
+#PBS -l nodes=1:ppn=2
+#PBS -j n
+#PBS -l walltime=4:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+python mosaic.py -i /public/home/mfeng/jwang/forest/northeast/tcc/mean/1 -o /public/home/mfeng/jwang/forest/northeast/tcc/mean/2 -os /public/home/mfeng/jwang/forest/northeast/code_tcc/mean

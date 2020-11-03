@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N mean
+#PBS -l nodes=3:ppn=30
+#PBS -j n
+#PBS -l walltime=5:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+mpiexec -n $NP -hostfile $PBS_NODEFILE python mean.py -i /public/home/mfeng/jwang/forest/northeast/tcc/tcc_new -o /public/home/mfeng/jwang/forest/northeast/out/mean/1 -wi 200 -he 200 -n $NP

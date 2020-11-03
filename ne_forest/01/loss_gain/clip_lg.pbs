@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N clip_lg
+#PBS -l nodes=1:ppn=2
+#PBS -j n
+#PBS -l walltime=5:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+mpiexec -n $NP -hostfile $PBS_NODEFILE python clip_lg.py -i /public/home/mfeng/jwang/forest/northeast/out/loss_gain -o /public/home/mfeng/jwang/forest/northeast/out/loss_gain/clip -m /public/home/mfeng/jwang/forest/northeast/tcc/ne_shp/NE_WGS1984.shp -n $NP

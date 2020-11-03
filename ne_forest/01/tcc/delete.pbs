@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -N delete
+#PBS -l nodes=1:ppn=20
+#PBS -j n
+#PBS -l walltime=1:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+mpiexec -n $NP -hostfile $PBS_NODEFILE python delete.py -i /public/home/mfeng/jwang/forest/northeast/tcc/tcc_new/data -m /public/home/mfeng/jwang/forest/northeast/tcc/ne_shp/NE_WGS1984.shp -n $NP
