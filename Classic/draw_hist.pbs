@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N hist
+#PBS -l nodes=2:ppn=18
+#PBS -j n
+#PBS -l walltime=5:00:00
+cd $PBS_O_WORKDIR
+
+NP=`cat $PBS_NODEFILE | wc -l`
+
+mpiexec -n $NP -hostfile $PBS_NODEFILE python draw_hist_1.py -i /public/home/mfeng/work/test/forest/pangyong/phase2/ne/forest/file66/scene02/comp01/data -o /public/home/mfeng/jwang/forest/ne/out/hist -ta /public/home/mfeng/jwang/forest/ne/task/task_1.shp -ne /public/home/mfeng/jwang/forest/ne/ne_shp/NE_WGS1984.shp -n $NP
